@@ -1,8 +1,18 @@
 # Coding Launcher —— Context Menu Launcher for ClaudeCode & OpenCode
 
+<center>
+
 [🇨🇳 简体中文](README_CN.md) | [🇬🇧 English](README.md)
 
+</center>
+
 Add "ClaudeCode PWSH", "CodexCli PWSH", "CopilotCli PWSH", "GeminiCli PWSH" and "OpenCode PWSH" entries to your Windows right-click context menu. Open any tool directly from any folder — no terminal, no `cd`, no manual commands.
+
+<center>
+
+![截图](./img/右键截图.png)
+
+</center>
 
 ## Goal
 

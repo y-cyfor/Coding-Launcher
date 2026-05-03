@@ -1,8 +1,19 @@
 # Coding Launcher —— ClaudeCode & OpenCode 右键菜单启动器
 
+<center>
+
 [🇨🇳 简体中文](README_CN.md) | [🇬🇧 English](README.md)
 
+</center>
+
+
 在 Windows 右键菜单中添加 "ClaudeCode PWSH"、"CodexCli PWSH"、"CopilotCli PWSH"、"GeminiCli PWSH" 和 "OpenCode PWSH" 选项，从任意文件夹直接启动工具——无需打开终端、无需 `cd`、无需手动输入命令。
+
+<center>
+
+![截图](./img/右键截图.png)
+
+</center>
 
 ## 脚本目标
 
