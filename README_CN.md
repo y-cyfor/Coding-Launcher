@@ -1,4 +1,4 @@
-# Coding Launcher —— ClaudeCode & OpenCode 右键菜单启动器
+# Coding Launcher —— AI 编程 CLI 工具右键菜单启动器
 
 <center>
 
@@ -8,6 +8,8 @@
 
 
 在 Windows 右键菜单中添加 "ClaudeCode PWSH"、"CodexCli PWSH"、"CopilotCli PWSH"、"GeminiCli PWSH" 和 "OpenCode PWSH" 选项，从任意文件夹直接启动工具——无需打开终端、无需 `cd`、无需手动输入命令。
+
+支持从 **Windows** 或 **WSL**（Windows Subsystem for Linux）环境中启动工具。
 
 <center>
 
@@ -34,21 +36,20 @@
 | **Gemini CLI** | `npm i -g @anthropic/gemini-cli` |
 | **OpenCode** | `winget install SST.opencode` |
 
+所有工具均支持 **Windows** 和 **WSL** 环境。
+
 ## 环境要求
 
 - Windows 10/11
 - 已安装 PowerShell 7（`pwsh.exe`）
+- WSL（可选）—— 用于在 Linux 环境中打开工具
 
 ## 安装方法
 
 1. 将以下所有文件下载到同一个本地文件夹：
    - `install.ps1`
    - `uninstall.ps1`
-   - `claude.ico` / `claude-color.ico`
-   - `codex.ico` / `codex-color.ico`
-   - `copilot.ico` / `copilot-color.ico`
-   - `gemini.ico` / `gemini-color.ico`
-   - `opencode.ico`
+   - `ico/` 文件夹（所有图标文件）
 
    **或直接下载压缩包解压：[Releases](https://github.com/y-cyfor/Coding-Launcher/releases)**
 
@@ -58,15 +59,29 @@
    - `[1]` 黑白（默认）
    - `[2]` 彩色
 
-4. 脚本会扫描本地已安装的工具，并显示检测结果：
-   > 检查到本地已安装：ClaudeCode、OpenCode
-   > 未检测到：CodexCli、CopilotCli、GeminiCli
-   >
-   > 脚本将只为已安装的工具添加右键菜单。后续安装相应工具后可再次运行本脚本。
-   >
-   > 按任意键继续，取消请按 Ctrl+C ...
+4. 脚本会扫描本地已安装的工具（Windows + WSL），并显示检测结果：
+   ```
+   Windows 已安装: ClaudeCode、OpenCode
+   Windows 未安装: CodexCli、CopilotCli、GeminiCli
 
-5. 按任意键继续。只有已安装的工具才会被添加到右键菜单中。
+   检测到 WSL 发行版: Ubuntu
+     Ubuntu 已安装: ClaudeCode、CodexCli
+     Ubuntu 未安装: CopilotCli、GeminiCli、OpenCode
+   ```
+
+5. 弹出选择菜单，选择需要添加的项：
+   ```
+   ══════════════════════════════════════════════════════
+     可用菜单项 / Available menu items:
+   ══════════════════════════════════════════════════════
+     [1] ClaudeCode        (Windows)
+     [2] OpenCode          (Windows)
+     [3] ClaudeCode WSL    (Ubuntu)
+     [4] CodexCli WSL      (Ubuntu)
+   ══════════════════════════════════════════════════════
+   ```
+
+   输入编号如 `1,3,5` 或范围如 `1-3`，输入 `all` 全选（默认）。
 
 6. 如果弹出 UAC 权限提示，点击 **"是"** 授予管理员权限。
 
@@ -77,15 +92,17 @@
 
 **文件夹空白处右键**和**文件夹图标上右键**都会显示对应的菜单项。
 
+WSL 菜单项会通过 `wslpath` 自动将 Windows 路径转换为 WSL 路径。
+
 ## 卸载方法
 
-右键点击 `uninstall.ps1` → **"使用 PowerShell 运行"** → 确认 UAC 提示。这将移除所有注册表项和图标目录。
+右键点击 `uninstall.ps1` → **"使用 PowerShell 运行"** → 确认 UAC 提示。这将移除所有注册表项（包括 WSL 变体）和图标目录。
 
 ## 注意事项
 
 - 如果菜单项没有立即出现，请重启资源管理器或注销后重新登录。
 - 随时可以重新运行 `install.ps1` 切换黑白/彩色图标，或为后续新安装的工具注册菜单。
-- 安装期间图标文件必须与脚本放在同一目录。安装完成后，原始图标文件可以安全删除（图标已复制到持久化位置）。
+- 安装期间 `ico/` 文件夹必须与脚本放在同一目录。安装完成后，原始图标文件夹可以安全删除（图标已复制到持久化位置）。
 
 ## 工具
 

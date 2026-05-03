@@ -8,6 +8,9 @@
 
     支持全局选择彩色或黑白图标。
     Supports global choice between color or monochrome icons for all tools.
+
+    支持 WSL 中已安装的工具。
+    Supports tools installed in WSL distros.
 .NOTES
     需要与 ico/ 文件夹放在同一目录。
     Run from the same directory as the ico/ folder.
@@ -57,7 +60,10 @@ if ($HasChoice) {
     else { Write-Host "使用黑白图标 / Using monochrome icons." -ForegroundColor Green }
 }
 
-# --- Locate executables ---
+# ============================================================
+#  Windows 工具检测 / Windows tool detection
+# ============================================================
+
 $Tools = @(
     @{ Name = "ClaudeCode"; Icon = "claude";  Cmd = "claude.cmd";  Fallback = "$env:APPDATA\npm\claude.cmd" }
     @{ Name = "CodexCli";   Icon = "codex";   Cmd = "codex.cmd";   Fallback = "$env:APPDATA\npm\codex.cmd" }
@@ -73,11 +79,75 @@ foreach ($t in $Tools) {
     $t.Path  = $found
 }
 
-$Installed   = $Tools | Where-Object { $_.Found }
+$Installed    = $Tools | Where-Object { $_.Found }
 $NotInstalled = $Tools | Where-Object { -not $_.Found }
 
 Write-Host ""
-if (-not $Installed) {
+if ($Installed) {
+    $inStr = ($Installed | ForEach-Object { $_.Name }) -join "、"
+    Write-Host "Windows 已安装: $inStr" -ForegroundColor Green
+}
+if ($NotInstalled) {
+    $notStr = ($NotInstalled | ForEach-Object { $_.Name }) -join "、"
+    Write-Host "Windows 未安装: $notStr" -ForegroundColor Yellow
+}
+
+# ============================================================
+#  WSL 检测 / WSL detection
+# ============================================================
+
+$WslAvailable = Get-Command wsl.exe -ErrorAction SilentlyContinue
+$WslDistros   = @()
+$WslTools     = @()
+
+Write-Host ""
+if (-not $WslAvailable) {
+    Write-Host "未检测到 WSL，跳过 WSL 检测。" -ForegroundColor Yellow
+    Write-Host "WSL not detected. Skipping WSL detection." -ForegroundColor Yellow
+} else {
+    $wslOutput = wsl -l -q 2>$null
+    $WslDistros = $wslOutput |
+        ForEach-Object { $_ -replace '[\x00\xFEFF]', '' } |
+        Where-Object { $_.Trim() -ne '' } |
+        ForEach-Object { $_.Trim() }
+
+    if ($WslDistros.Count -eq 0) {
+        Write-Host "WSL 已安装但未检测到发行版。" -ForegroundColor Yellow
+        Write-Host "WSL installed but no distros found." -ForegroundColor Yellow
+    } else {
+        Write-Host "检测到 WSL 发行版 / WSL distros: $($WslDistros -join '、')" -ForegroundColor Cyan
+
+        foreach ($dist in $WslDistros) {
+            $distInstalled    = @()
+            $distNotInstalled = @()
+
+            foreach ($t in $Tools) {
+                $linuxCmd = $t.Cmd -replace '\.cmd$', ''
+                $null = wsl -d $dist -- which $linuxCmd 2>$null
+                if ($LASTEXITCODE -eq 0) {
+                    $distInstalled += $t.Name
+                    $WslTools += @{ Distro = $dist; Tool = $t; LinuxCmd = $linuxCmd }
+                } else {
+                    $distNotInstalled += $t.Name
+                }
+            }
+
+            if ($distInstalled.Count -gt 0) {
+                Write-Host "  $dist 已安装 / installed: $($distInstalled -join '、')" -ForegroundColor Green
+            }
+            if ($distNotInstalled.Count -gt 0) {
+                Write-Host "  $dist 未安装 / not installed: $($distNotInstalled -join '、')" -ForegroundColor Yellow
+            }
+        }
+    }
+}
+
+# ============================================================
+#  无工具退出 / Exit if nothing found
+# ============================================================
+
+if (-not $Installed -and $WslTools.Count -eq 0) {
+    Write-Host ""
     Write-Host "未检测到任何已安装的工具，无需注册右键菜单。" -ForegroundColor Red
     Write-Host "No installed tools detected. Nothing to register." -ForegroundColor Red
     Write-Host ""
@@ -89,37 +159,94 @@ if (-not $Installed) {
     exit
 }
 
-if ($NotInstalled) {
-    $inStr  = ($Installed   | ForEach-Object { $_.Name }) -join "、"
-    $notStr = ($NotInstalled | ForEach-Object { $_.Name }) -join "、"
-    Write-Host "检查到本地已安装: $inStr" -ForegroundColor Green
-    Write-Host "未检测到: $notStr" -ForegroundColor Yellow
-    Write-Host "脚本将只为已安装的工具添加右键菜单。后续安装相应工具后可再次运行本脚本。" -ForegroundColor White
-    Write-Host ""
-    Write-Host "已安装: Installed: $inStr" -ForegroundColor Green
-    Write-Host "未安装: Not installed: $notStr" -ForegroundColor Yellow
-    Write-Host "Only installed tools will be registered. Re-run this script after installing missing tools." -ForegroundColor White
-} else {
-    $inStr = ($Installed | ForEach-Object { $_.Name }) -join "、"
-    Write-Host "检查到本地已安装: $inStr" -ForegroundColor Green
-    Write-Host ""
-    Write-Host "已安装: Installed: $inStr" -ForegroundColor Green
+# ============================================================
+#  选择菜单 / Selection menu
+# ============================================================
+
+# --- Build unified list ---
+$AllItems = @()
+$idx = 1
+
+foreach ($t in $Tools) {
+    if ($t.Found) {
+        $AllItems += @{ Index = $idx; Display = "$($t.Name)        (Windows)"; Type = "Win"; Data = $t }
+        $idx++
+    }
 }
+foreach ($wt in $WslTools) {
+    $AllItems += @{ Index = $idx; Display = "$($wt.Tool.Name) WSL    ($($wt.Distro))"; Type = "WSL"; Data = $wt }
+    $idx++
+}
+
+# --- Parse selection input ---
+function Parse-Selection {
+    param(
+        [string]$InputStr,
+        [int]$MaxIndex
+    )
+
+    if ($InputStr -eq '' -or $InputStr -eq 'all') {
+        return 1..$MaxIndex
+    }
+
+    $result = @()
+    $parts = $InputStr -split ','
+
+    foreach ($part in $parts) {
+        $part = $part.Trim()
+        if ($part -match '^(\d+)\s*-\s*(\d+)$') {
+            $start = [int]$Matches[1]
+            $end   = [int]$Matches[2]
+            if ($start -le $end) { $result += $start..$end }
+        } elseif ($part -match '^\d+$') {
+            $result += [int]$part
+        }
+    }
+
+    return ($result | Where-Object { $_ -ge 1 -and $_ -le $MaxIndex } | Sort-Object -Unique)
+}
+
+# --- Display selection menu ---
 Write-Host ""
-Write-Host "按任意键继续，取消请按 Ctrl+C ..." -ForegroundColor White
-Write-Host "Press any key to continue, or Ctrl+C to cancel ..." -ForegroundColor White
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+Write-Host "══════════════════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "  可用菜单项 / Available menu items:" -ForegroundColor Cyan
+Write-Host "══════════════════════════════════════════════════════" -ForegroundColor Cyan
+foreach ($item in $AllItems) {
+    Write-Host "  [$($item.Index)] $($item.Display)" -ForegroundColor White
+}
+Write-Host "══════════════════════════════════════════════════════" -ForegroundColor Cyan
+
+# --- Get user selection ---
+$SelectedIndices = @()
+do {
+    Write-Host ""
+    $userInput = Read-Host "请输入要添加的编号 (如 1,3,5 或 1-3)，输入 all 全选 [默认 all]`nSelect items (e.g. 1,3,5 or 1-3), or 'all' [default all]"
+    $SelectedIndices = @(Parse-Selection -InputStr $userInput -MaxIndex $AllItems.Count)
+    if ($SelectedIndices.Count -eq 0) {
+        Write-Host "未选择任何有效项，请重新输入。" -ForegroundColor Yellow
+        Write-Host "No valid items selected. Please try again." -ForegroundColor Yellow
+    }
+} while ($SelectedIndices.Count -eq 0)
+
+$SelectedItems = $AllItems | Where-Object { $SelectedIndices -contains $_.Index }
+
 Write-Host ""
+Write-Host "已选择 / Selected:" -ForegroundColor Green
+foreach ($item in $SelectedItems) {
+    Write-Host "  [$($item.Index)] $($item.Display)" -ForegroundColor Green
+}
 
 foreach ($t in $Tools) { Write-Host "$($t.Name): $($t.Path)" -ForegroundColor DarkGray }
-Write-Host "图标目录:  $IconDir" -ForegroundColor DarkGray
+Write-Host "图标目录 / Icon dir: $IconDir" -ForegroundColor DarkGray
 
-# --- Copy icons to permanent location ---
+# ============================================================
+#  复制图标 / Copy icons
+# ============================================================
+
 if (-not (Test-Path $IconDir)) { New-Item -ItemType Directory -Path $IconDir -Force | Out-Null }
 
 $IconBases = @("claude", "codex", "copilot", "gemini", "opencode")
 foreach ($base in $IconBases) {
-    # Try preferred style first, then fallback to the other
     $preferred = Join-Path $IconSrc "${base}${Suffix}.ico"
     $altSuffix = if ($Suffix -eq "-color") { "" } else { "-color" }
     $alt = Join-Path $IconSrc "${base}${altSuffix}.ico"
@@ -133,14 +260,17 @@ foreach ($base in $IconBases) {
 }
 Write-Host "图标已复制到 $IconDir" -ForegroundColor Green
 
-# --- Helper: write a single context menu entry ---
+# ============================================================
+#  注册表写入函数 / Registry helper
+# ============================================================
+
 function Write-RegContextMenu {
     param(
-        [string]$Root,       # e.g. "HKCU:\Software\Classes\Directory\Background\shell"
-        [string]$Name,       # unique key name
-        [string]$Display,    # text shown in menu
-        [string]$Icon,       # full path to .ico
-        [string]$Command     # full command line (may contain %V or %1)
+        [string]$Root,
+        [string]$Name,
+        [string]$Display,
+        [string]$Icon,
+        [string]$Command
     )
 
     $keyPath = Join-Path $Root $Name
@@ -155,9 +285,12 @@ function Write-RegContextMenu {
     Set-ItemProperty -Path $cmdPath -Name "(Default)"  -Value $Command
 }
 
-# --- Build command lines and register entries ---
-$BgPlaceholder  = "%V"   # Directory Background
-$DirPlaceholder = "%1"   # Directory
+# ============================================================
+#  注册选中项 / Register selected items
+# ============================================================
+
+$BgPlaceholder  = "%V"
+$DirPlaceholder = "%1"
 
 $BgRoot  = "HKCU:\Software\Classes\Directory\Background\shell"
 $DirRoot = "HKCU:\Software\Classes\Directory\shell"
@@ -165,19 +298,34 @@ $DirRoot = "HKCU:\Software\Classes\Directory\shell"
 Write-Host ""
 Write-Host "正在注册右键菜单 / Registering context menu..." -ForegroundColor Cyan
 
-foreach ($t in $Tools) {
-    if (-not $t.Found) { continue }
+foreach ($item in $SelectedItems) {
+    if ($item.Type -eq "Win") {
+        $t = $item.Data
+        $menuName = "$($t.Name)PWSH"
+        $iconPath = Join-Path $IconDir "$($t.Icon).ico"
 
-    $menuName = "$($t.Name)PWSH"
-    $iconPath = Join-Path $IconDir "$($t.Icon).ico"
+        $bgCmd  = "pwsh.exe -NoExit -NoProfile -Command `"cd `"$BgPlaceholder`"; & `"$($t.Path)`"`""
+        $dirCmd = "pwsh.exe -NoExit -NoProfile -Command `"cd `"$DirPlaceholder`"; & `"$($t.Path)`"`""
 
-    $bgCmd  = "pwsh.exe -NoExit -NoProfile -Command `"cd \`"$BgPlaceholder\`"; & \`"$($t.Path)\`"`""
-    $dirCmd = "pwsh.exe -NoExit -NoProfile -Command `"cd \`"$DirPlaceholder\`"; & \`"$($t.Path)\`"`""
+        Write-RegContextMenu -Root $BgRoot -Name $menuName -Display "$($t.Name) PWSH" -Icon $iconPath -Command $bgCmd
+        Write-RegContextMenu -Root $DirRoot -Name $menuName -Display "$($t.Name) PWSH" -Icon $iconPath -Command $dirCmd
 
-    Write-RegContextMenu -Root $BgRoot -Name $menuName -Display "$($t.Name) PWSH" -Icon $iconPath -Command $bgCmd
-    Write-RegContextMenu -Root $DirRoot -Name $menuName -Display "$($t.Name) PWSH" -Icon $iconPath -Command $dirCmd
+        Write-Host "  $($t.Name) PWSH  (背景 / background + 文件夹 / folder)" -ForegroundColor Cyan
+    }
+    elseif ($item.Type -eq "WSL") {
+        $wt = $item.Data
+        $menuName = "$($wt.Tool.Name)WSL_$($wt.Distro)"
+        $iconPath = Join-Path $IconDir "$($wt.Tool.Icon).ico"
+        $display  = "$($wt.Tool.Name) WSL ($($wt.Distro))"
 
-    Write-Host "  $($t.Name) PWSH  (背景 / background + 文件夹 / folder)" -ForegroundColor Cyan
+        $bgCmd  = 'wsl.exe -d {0} -- bash -c "cd \"$(wslpath ''{1}'')\" && {2}"' -f $wt.Distro, $BgPlaceholder, $wt.LinuxCmd
+        $dirCmd = 'wsl.exe -d {0} -- bash -c "cd \"$(wslpath ''{1}'')\" && {2}"' -f $wt.Distro, $DirPlaceholder, $wt.LinuxCmd
+
+        Write-RegContextMenu -Root $BgRoot  -Name $menuName -Display $display -Icon $iconPath -Command $bgCmd
+        Write-RegContextMenu -Root $DirRoot -Name $menuName -Display $display -Icon $iconPath -Command $dirCmd
+
+        Write-Host "  $display  (背景 / background + 文件夹 / folder)" -ForegroundColor Cyan
+    }
 }
 
 Write-Host ""

@@ -1,6 +1,7 @@
 ﻿<#
 .SYNOPSIS
-    Uninstall ClaudeCode / CodexCli / CopilotCli / GeminiCli / OpenCode context menu entries.
+    Uninstall ClaudeCode / CodexCli / CopilotCli / GeminiCli / OpenCode context menu entries
+    (including WSL variants).
 .DESCRIPTION
     Removes registry entries and icon files installed by install.ps1.
 #>
@@ -33,6 +34,17 @@ foreach ($root in $Roots) {
             Write-Host "  Not found: $keyPath" -ForegroundColor DarkGray
         }
     }
+}
+
+Write-Host "Removing WSL registry entries..." -ForegroundColor Cyan
+
+foreach ($root in $Roots) {
+    Get-ChildItem $root -ErrorAction SilentlyContinue |
+        Where-Object { $_.PSChildName -match 'WSL' } |
+        ForEach-Object {
+            Remove-Item $_.PSPath -Recurse -Force
+            Write-Host "  Removed: $($_.PSPath)" -ForegroundColor Yellow
+        }
 }
 
 if (Test-Path $IconDir) {

@@ -1,4 +1,4 @@
-# Coding Launcher —— Context Menu Launcher for ClaudeCode & OpenCode
+# Coding Launcher —— Context Menu Launcher for AI Coding CLI Tools
 
 <center>
 
@@ -7,6 +7,8 @@
 </center>
 
 Add "ClaudeCode PWSH", "CodexCli PWSH", "CopilotCli PWSH", "GeminiCli PWSH" and "OpenCode PWSH" entries to your Windows right-click context menu. Open any tool directly from any folder — no terminal, no `cd`, no manual commands.
+
+Supports launching tools from **Windows** or **WSL** (Windows Subsystem for Linux).
 
 <center>
 
@@ -33,21 +35,20 @@ Instead, simply **right-click any folder (or inside it) → select the tool you 
 | **Gemini CLI** | `npm i -g @anthropic/gemini-cli` |
 | **OpenCode** | `winget install SST.opencode` |
 
+All tools support both **Windows** and **WSL** environments.
+
 ## Requirements
 
 - Windows 10/11
 - PowerShell 7 (`pwsh.exe`) installed
+- WSL (optional) — for opening tools in Linux environment
 
 ## Installation
 
 1. Download all files from this repository to a local folder:
    - `install.ps1`
    - `uninstall.ps1`
-   - `claude.ico` / `claude-color.ico`
-   - `codex.ico` / `codex-color.ico`
-   - `copilot.ico` / `copilot-color.ico`
-   - `gemini.ico` / `gemini-color.ico`
-   - `opencode.ico`
+   - `ico/` folder (all icon files)
 
    **Or download and extract the latest release archive: [Releases](https://github.com/y-cyfor/Coding-Launcher/releases)**
 
@@ -57,15 +58,29 @@ Instead, simply **right-click any folder (or inside it) → select the tool you 
    - `[1]` Monochrome (default)
    - `[2]` Color
 
-4. The script will scan your system for installed tools. A summary will be displayed:
-   > Detected installed: ClaudeCode, OpenCode
-   > Not detected: CodexCli, CopilotCli, GeminiCli
-   >
-   > Only installed tools will be registered. Re-run this script after installing missing tools.
-   >
-   > Press any key to continue, or Ctrl+C to cancel ...
+4. The script will scan your system for installed tools (Windows + WSL). A summary will be displayed:
+   ```
+   Windows 已安装: ClaudeCode、OpenCode
+   Windows 未安装: CodexCli、CopilotCli、GeminiCli
 
-5. Press any key to continue. Only tools that are already installed on your system will be added to the context menu.
+   检测到 WSL 发行版: Ubuntu
+     Ubuntu 已安装: ClaudeCode、CodexCli
+     Ubuntu 未安装: CopilotCli、GeminiCli、OpenCode
+   ```
+
+5. A selection menu will appear. Choose which items to add:
+   ```
+   ══════════════════════════════════════════════════════
+     可用菜单项 / Available menu items:
+   ══════════════════════════════════════════════════════
+     [1] ClaudeCode        (Windows)
+     [2] OpenCode          (Windows)
+     [3] ClaudeCode WSL    (Ubuntu)
+     [4] CodexCli WSL      (Ubuntu)
+   ══════════════════════════════════════════════════════
+   ```
+
+   Enter numbers like `1,3,5` or ranges like `1-3`, or type `all` to select all (default).
 
 6. If a UAC prompt appears, click **Yes** to grant administrator privileges.
 
@@ -76,15 +91,17 @@ Instead, simply **right-click any folder (or inside it) → select the tool you 
 
 Both the **folder background** (right-click in empty space) and the **folder itself** (right-click on the folder icon) will show the menu entries.
 
+WSL menu entries will automatically convert Windows paths to WSL paths using `wslpath`.
+
 ## Uninstall
 
-Right-click `uninstall.ps1` → **"Run with PowerShell"** → confirm UAC prompt. This removes all registry entries and the icon directory.
+Right-click `uninstall.ps1` → **"Run with PowerShell"** → confirm UAC prompt. This removes all registry entries (including WSL variants) and the icon directory.
 
 ## Notes
 
 - If menu items don't appear immediately, restart Windows Explorer or log out and back in.
 - You can re-run `install.ps1` anytime to switch between monochrome and color icons, or to register newly installed tools.
-- The icon files must remain in the same directory as the scripts during installation. After installation, they can be safely deleted (icons are copied to a persistent location).
+- The `ico/` folder must remain in the same directory as the scripts during installation. After installation, it can be safely deleted (icons are copied to a persistent location).
 
 ## Tools
 
