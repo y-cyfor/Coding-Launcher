@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-    Uninstall ClaudeCode and OpenCode context menu entries.
+    Uninstall ClaudeCode / CodexCli / CopilotCli / GeminiCli / OpenCode context menu entries.
 .DESCRIPTION
     Removes registry entries and icon files installed by install.ps1.
 #>

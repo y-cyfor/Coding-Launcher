@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    branches: [main]
+    tags: ['v*']
 
 permissions:
   contents: write
@@ -30,11 +30,11 @@ jobs:
           zip -r "Coding-Launcher-${{ steps.version.outputs.version }}.win.zip" \
             --exclude=".git/*" --exclude=".github/*" \
             README.md README_CN.md install.ps1 uninstall.ps1 \
-            claude.ico claude-color.ico \
-            codex.ico codex-color.ico \
-            copilot.ico copilot-color.ico \
-            gemini.ico gemini-color.ico \
-            opencode.ico
+            ico/claude.ico ico/claude-color.ico \
+            ico/codex.ico ico/codex-color.ico \
+            ico/copilot.ico ico/copilot-color.ico \
+            ico/gemini.ico ico/gemini-color.ico \
+            ico/opencode.ico
 
       - name: Create 7Z
         run: |
@@ -42,19 +42,18 @@ jobs:
           7z a "Coding-Launcher-${{ steps.version.outputs.version }}.win.7z" \
             -xr!.git -xr!.github \
             README.md README_CN.md install.ps1 uninstall.ps1 \
-            claude.ico claude-color.ico \
-            codex.ico codex-color.ico \
-            copilot.ico copilot-color.ico \
-            gemini.ico gemini-color.ico \
-            opencode.ico
+            ico/claude.ico ico/claude-color.ico \
+            ico/codex.ico ico/codex-color.ico \
+            ico/copilot.ico ico/copilot-color.ico \
+            ico/gemini.ico ico/gemini-color.ico \
+            ico/opencode.ico
 
-      - name: Create or update release
+      - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           TAG="v$VERSION"
-          gh release delete "$TAG" --cleanup-tag --yes 2>/dev/null || true
           gh release create "$TAG" \
             "Coding-Launcher-$VERSION.win.zip" \
             "Coding-Launcher-$VERSION.win.7z" \

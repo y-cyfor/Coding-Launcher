@@ -9,8 +9,8 @@
     支持全局选择彩色或黑白图标。
     Supports global choice between color or monochrome icons for all tools.
 .NOTES
-    需要与 *.ico 图标文件放在同一目录。
-    Run from the same directory as the *.ico files.
+    需要与 ico/ 文件夹放在同一目录。
+    Run from the same directory as the ico/ folder.
     需要 pwsh.exe (PowerShell 7)。
     Requires pwsh.exe (PowerShell 7) to be installed.
     脚本会自动请求管理员权限。
@@ -29,6 +29,7 @@ $ErrorActionPreference = "Stop"
 # --- Configuration ---
 $IconDir   = "$env:USERPROFILE\.context-menu-icons"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$IconSrc   = Join-Path $ScriptDir "ico"
 
 # --- Global icon style choice (color or monochrome) ---
 $Suffix = ""  # "" = monochrome, "-color" = color
@@ -36,7 +37,7 @@ $Suffix = ""  # "" = monochrome, "-color" = color
 # Check if any tool has both color and mono icons available
 $HasChoice = $false
 foreach ($base in @("claude", "codex", "copilot", "gemini")) {
-    if ((Test-Path (Join-Path $ScriptDir "${base}.ico")) -and (Test-Path (Join-Path $ScriptDir "${base}-color.ico"))) {
+    if ((Test-Path (Join-Path $IconSrc "${base}.ico")) -and (Test-Path (Join-Path $IconSrc "${base}-color.ico"))) {
         $HasChoice = $true; break
     }
 }
@@ -76,6 +77,18 @@ $Installed   = $Tools | Where-Object { $_.Found }
 $NotInstalled = $Tools | Where-Object { -not $_.Found }
 
 Write-Host ""
+if (-not $Installed) {
+    Write-Host "未检测到任何已安装的工具，无需注册右键菜单。" -ForegroundColor Red
+    Write-Host "No installed tools detected. Nothing to register." -ForegroundColor Red
+    Write-Host ""
+    Write-Host "请先安装至少一个工具后重新运行本脚本。" -ForegroundColor Yellow
+    Write-Host "Please install at least one tool and re-run this script." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "按任意键退出 / Press any key to exit ..." -ForegroundColor White
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    exit
+}
+
 if ($NotInstalled) {
     $inStr  = ($Installed   | ForEach-Object { $_.Name }) -join "、"
     $notStr = ($NotInstalled | ForEach-Object { $_.Name }) -join "、"
@@ -107,9 +120,9 @@ if (-not (Test-Path $IconDir)) { New-Item -ItemType Directory -Path $IconDir -Fo
 $IconBases = @("claude", "codex", "copilot", "gemini", "opencode")
 foreach ($base in $IconBases) {
     # Try preferred style first, then fallback to the other
-    $preferred = Join-Path $ScriptDir "${base}${Suffix}.ico"
+    $preferred = Join-Path $IconSrc "${base}${Suffix}.ico"
     $altSuffix = if ($Suffix -eq "-color") { "" } else { "-color" }
-    $alt = Join-Path $ScriptDir "${base}${altSuffix}.ico"
+    $alt = Join-Path $IconSrc "${base}${altSuffix}.ico"
 
     if (Test-Path $preferred) { $src = $preferred }
     elseif (Test-Path $alt) { $src = $alt }
@@ -138,7 +151,7 @@ function Write-RegContextMenu {
     New-Item -Path $cmdPath -Force | Out-Null
 
     Set-ItemProperty -Path $keyPath -Name "(Default)" -Value $Display
-    Set-ItemProperty -Path $keyPath -Name "Icon"       -Value "`"$Icon`""
+    Set-ItemProperty -Path $keyPath -Name "Icon"       -Value $Icon
     Set-ItemProperty -Path $cmdPath -Name "(Default)"  -Value $Command
 }
 
