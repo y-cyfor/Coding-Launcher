@@ -15,7 +15,7 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 $ErrorActionPreference = "Stop"
 
 $IconDir   = "$env:USERPROFILE\.context-menu-icons"
-$MenuNames = @("ClaudeCodePWSH", "OpenCodePWSH")
+$MenuNames = @("ClaudeCodePWSH", "CodexCliPWSH", "CopilotCliPWSH", "GeminiCliPWSH", "OpenCodePWSH")
 $Roots     = @(
     "HKCU:\Software\Classes\Directory\Background\shell",
     "HKCU:\Software\Classes\Directory\shell"

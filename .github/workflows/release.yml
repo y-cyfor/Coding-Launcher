@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$VERSION" = "$GITHUB_REF_NAME" ] || [ -z "$VERSION" ]; then
+            VERSION="0.1.0"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Using version: $VERSION"
+
+      - name: Create ZIP
+        run: |
+          zip -r "Coding-Launcher-${{ steps.version.outputs.version }}.win.zip" . -x ".git/*" ".github/*"
+
+      - name: Create 7Z
+        run: |
+          sudo apt-get install -y p7zip-full > /dev/null
+          7z a "Coding-Launcher-${{ steps.version.outputs.version }}.win.7z" . -x".git/*" -x".github/*"
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="v$VERSION"
+          gh release delete "$TAG" --cleanup-tag --yes 2>/dev/null || true
+          gh release create "$TAG" \
+            "Coding-Launcher-$VERSION.win.zip" \
+            "Coding-Launcher-$VERSION.win.7z" \
+            --title "Coding Launcher v$VERSION" \
+            --generate-notes

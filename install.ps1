@@ -1,16 +1,16 @@
 ﻿<#
 .SYNOPSIS
-    安装 ClaudeCode 和 OpenCode 右键菜单 / Install ClaudeCode and OpenCode context menu entries.
+    安装 ClaudeCode / CodexCli / CopilotCli / GeminiCli / OpenCode 右键菜单
 .DESCRIPTION
     将图标文件复制到固定位置并注册文件夹右键菜单项。
     Copies icon files to a permanent location and registers right-click context menu
     entries for both Directory Background and Directory shell.
 
-    支持选择彩色或黑白 Claude 图标。
-    Supports choosing between a color or monochrome Claude icon.
+    支持全局选择彩色或黑白图标。
+    Supports global choice between color or monochrome icons for all tools.
 .NOTES
-    需要与 claude.ico（或 claude-color.ico）和 opencode.ico 放在同一目录。
-    Run from the same directory as claude.ico (or claude-color.ico) and opencode.ico.
+    需要与 *.ico 图标文件放在同一目录。
+    Run from the same directory as the *.ico files.
     需要 pwsh.exe (PowerShell 7)。
     Requires pwsh.exe (PowerShell 7) to be installed.
     脚本会自动请求管理员权限。
@@ -30,84 +30,94 @@ $ErrorActionPreference = "Stop"
 $IconDir   = "$env:USERPROFILE\.context-menu-icons"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
-# --- Claude icon choice ---
-$ClaudeMono  = Join-Path $ScriptDir "claude.ico"
-$ClaudeColor = Join-Path $ScriptDir "claude-color.ico"
+# --- Global icon style choice (color or monochrome) ---
+$Suffix = ""  # "" = monochrome, "-color" = color
 
-if ((Test-Path $ClaudeMono) -and (Test-Path $ClaudeColor)) {
+# Check if any tool has both color and mono icons available
+$HasChoice = $false
+foreach ($base in @("claude", "codex", "copilot", "gemini")) {
+    if ((Test-Path (Join-Path $ScriptDir "${base}.ico")) -and (Test-Path (Join-Path $ScriptDir "${base}-color.ico"))) {
+        $HasChoice = $true; break
+    }
+}
+
+if ($HasChoice) {
     Write-Host ""
-    Write-Host "选择 Claude 图标样式 / Select Claude icon style:" -ForegroundColor Cyan
-    Write-Host "  [1] 黑白 / Monochrome (claude.ico)"       -ForegroundColor White
-    Write-Host "  [2] 彩色 / Color      (claude-color.ico)" -ForegroundColor White
+    Write-Host "选择全局图标样式 / Select global icon style:" -ForegroundColor Cyan
+    Write-Host "  [1] 黑白 / Monochrome" -ForegroundColor White
+    Write-Host "  [2] 彩色 / Color"      -ForegroundColor White
     Write-Host ""
 
     do {
         $choice = Read-Host "请选择 (1/2) [默认 1] / Select (1/2) [default 1]"
     } while ($choice -ne "" -and $choice -ne "1" -and $choice -ne "2")
 
-    if ($choice -eq "2") {
-        $ClaudeIcon = $ClaudeColor
-        $ClaudeIconName = "claude-color.ico"
-        Write-Host "已选择彩色图标 / Using color icon." -ForegroundColor Green
-    } else {
-        $ClaudeIcon = $ClaudeMono
-        $ClaudeIconName = "claude.ico"
-        Write-Host "已选择黑白图标 / Using monochrome icon." -ForegroundColor Green
-    }
-} elseif (Test-Path $ClaudeColor) {
-    $ClaudeIcon = $ClaudeColor
-    $ClaudeIconName = "claude-color.ico"
-    Write-Host "仅找到彩色图标，使用它 / Only claude-color.ico found, using it." -ForegroundColor Yellow
-} elseif (Test-Path $ClaudeMono) {
-    $ClaudeIcon = $ClaudeMono
-    $ClaudeIconName = "claude.ico"
-    Write-Host "仅找到黑白图标，使用它 / Only claude.ico found, using it." -ForegroundColor Yellow
-} else {
-    Write-Error "未找到 claude.ico 或 claude-color.ico / No claude.ico or claude-color.ico found in $ScriptDir"
-    exit 1
-}
-
-$OpencodeIcon = Join-Path $ScriptDir "opencode.ico"
-if (-not (Test-Path $OpencodeIcon)) {
-    Write-Error "未找到 opencode.ico / opencode.ico not found at: $OpencodeIcon"
-    exit 1
+    if ($choice -eq "2") { $Suffix = "-color"; Write-Host "使用彩色图标 / Using color icons." -ForegroundColor Green }
+    else { Write-Host "使用黑白图标 / Using monochrome icons." -ForegroundColor Green }
 }
 
 # --- Locate executables ---
-$ClaudeCmd = (Get-Command "claude.cmd"    -ErrorAction SilentlyContinue).Source
-if (-not $ClaudeCmd -or -not (Test-Path $ClaudeCmd)) {
-    $ClaudeCmd = "$env:APPDATA\npm\claude.cmd"
+$Tools = @(
+    @{ Name = "ClaudeCode"; Icon = "claude";  Cmd = "claude.cmd";  Fallback = "$env:APPDATA\npm\claude.cmd" }
+    @{ Name = "CodexCli";   Icon = "codex";   Cmd = "codex.cmd";   Fallback = "$env:APPDATA\npm\codex.cmd" }
+    @{ Name = "CopilotCli"; Icon = "copilot"; Cmd = "github-copilot-cli.cmd"; Fallback = "$env:APPDATA\npm\github-copilot-cli.cmd" }
+    @{ Name = "GeminiCli";  Icon = "gemini";  Cmd = "gemini.cmd";  Fallback = "$env:APPDATA\npm\gemini.cmd" }
+    @{ Name = "OpenCode";   Icon = "opencode";Cmd = "opencode.cmd"; Fallback = "$env:APPDATA\npm\opencode.cmd" }
+)
+
+foreach ($t in $Tools) {
+    $found = (Get-Command $t.Cmd -ErrorAction SilentlyContinue).Source
+    if (-not $found -or -not (Test-Path $found)) { $found = $t.Fallback }
+    $t.Found = $found -and (Test-Path $found)
+    $t.Path  = $found
 }
 
-$OpencodeCmd = (Get-Command "opencode.cmd" -ErrorAction SilentlyContinue).Source
-if (-not $OpencodeCmd -or -not (Test-Path $OpencodeCmd)) {
-    $OpencodeCmd = (Get-Command "opencode.exe" -ErrorAction SilentlyContinue).Source
-}
-if (-not $OpencodeCmd -or -not (Test-Path $OpencodeCmd)) {
-    $OpencodeCmd = "$env:APPDATA\npm\opencode.cmd"
-}
+$Installed   = $Tools | Where-Object { $_.Found }
+$NotInstalled = $Tools | Where-Object { -not $_.Found }
 
-Write-Host "claude.cmd:   $ClaudeCmd"   -ForegroundColor DarkGray
-Write-Host "opencode:     $OpencodeCmd" -ForegroundColor DarkGray
-Write-Host "图标目录:     $IconDir"     -ForegroundColor DarkGray
+Write-Host ""
+if ($NotInstalled) {
+    $inStr  = ($Installed   | ForEach-Object { $_.Name }) -join "、"
+    $notStr = ($NotInstalled | ForEach-Object { $_.Name }) -join "、"
+    Write-Host "检查到本地已安装: $inStr" -ForegroundColor Green
+    Write-Host "未检测到: $notStr" -ForegroundColor Yellow
+    Write-Host "脚本将只为已安装的工具添加右键菜单。后续安装相应工具后可再次运行本脚本。" -ForegroundColor White
+    Write-Host ""
+    Write-Host "已安装: Installed: $inStr" -ForegroundColor Green
+    Write-Host "未安装: Not installed: $notStr" -ForegroundColor Yellow
+    Write-Host "Only installed tools will be registered. Re-run this script after installing missing tools." -ForegroundColor White
+} else {
+    $inStr = ($Installed | ForEach-Object { $_.Name }) -join "、"
+    Write-Host "检查到本地已安装: $inStr" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "已安装: Installed: $inStr" -ForegroundColor Green
+}
+Write-Host ""
+Write-Host "按任意键继续，取消请按 Ctrl+C ..." -ForegroundColor White
+Write-Host "Press any key to continue, or Ctrl+C to cancel ..." -ForegroundColor White
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+Write-Host ""
+
+foreach ($t in $Tools) { Write-Host "$($t.Name): $($t.Path)" -ForegroundColor DarkGray }
+Write-Host "图标目录:  $IconDir" -ForegroundColor DarkGray
 
 # --- Copy icons to permanent location ---
 if (-not (Test-Path $IconDir)) { New-Item -ItemType Directory -Path $IconDir -Force | Out-Null }
 
-# Copy both color and mono to the destination, so re-running the script can switch
-$ClaMonoDest   = Join-Path $IconDir "claude.ico"
-$ClaColorDest  = Join-Path $IconDir "claude-color.ico"
-$OpeIconDest   = Join-Path $IconDir "opencode.ico"
+$IconBases = @("claude", "codex", "copilot", "gemini", "opencode")
+foreach ($base in $IconBases) {
+    # Try preferred style first, then fallback to the other
+    $preferred = Join-Path $ScriptDir "${base}${Suffix}.ico"
+    $altSuffix = if ($Suffix -eq "-color") { "" } else { "-color" }
+    $alt = Join-Path $ScriptDir "${base}${altSuffix}.ico"
 
-Copy-Item $ClaudeMono  $ClaMonoDest  -Force
-if (Test-Path $ClaudeColor) {
-    Copy-Item $ClaudeColor $ClaColorDest -Force
+    if (Test-Path $preferred) { $src = $preferred }
+    elseif (Test-Path $alt) { $src = $alt }
+    else { continue }
+
+    $dest = Join-Path $IconDir "${base}.ico"
+    Copy-Item $src $dest -Force
 }
-Copy-Item $OpencodeIcon $OpeIconDest -Force
-
-# Point to the chosen icon
-$ClaIconDest = Join-Path $IconDir $ClaudeIconName
-
 Write-Host "图标已复制到 $IconDir" -ForegroundColor Green
 
 # --- Helper: write a single context menu entry ---
@@ -132,33 +142,30 @@ function Write-RegContextMenu {
     Set-ItemProperty -Path $cmdPath -Name "(Default)"  -Value $Command
 }
 
-# --- Build command lines ---
+# --- Build command lines and register entries ---
 $BgPlaceholder  = "%V"   # Directory Background
 $DirPlaceholder = "%1"   # Directory
 
-$ClaBG  = "pwsh.exe -NoExit -NoProfile -Command `"cd \`"$BgPlaceholder\`"; & \`"$ClaudeCmd\`"`""
-$ClaDir = "pwsh.exe -NoExit -NoProfile -Command `"cd \`"$DirPlaceholder\`"; & \`"$ClaudeCmd\`"`""
-
-$OpeBG  = "pwsh.exe -NoExit -NoProfile -Command `"cd \`"$BgPlaceholder\`"; & \`"$OpencodeCmd\`"`""
-$OpeDir = "pwsh.exe -NoExit -NoProfile -Command `"cd \`"$DirPlaceholder\`"; & \`"$OpencodeCmd\`"`""
-
-# --- Register entries ---
 $BgRoot  = "HKCU:\Software\Classes\Directory\Background\shell"
 $DirRoot = "HKCU:\Software\Classes\Directory\shell"
 
 Write-Host ""
 Write-Host "正在注册右键菜单 / Registering context menu..." -ForegroundColor Cyan
 
-# Background (right-click in folder empty space)
-Write-RegContextMenu -Root $BgRoot -Name "ClaudeCodePWSH" -Display "ClaudeCode PWSH" -Icon $ClaIconDest -Command $ClaBG
-Write-RegContextMenu -Root $BgRoot -Name "OpenCodePWSH"   -Display "OpenCode PWSH"   -Icon $OpeIconDest -Command $OpeBG
+foreach ($t in $Tools) {
+    if (-not $t.Found) { continue }
 
-# Directory (right-click on folder itself)
-Write-RegContextMenu -Root $DirRoot -Name "ClaudeCodePWSH" -Display "ClaudeCode PWSH" -Icon $ClaIconDest -Command $ClaDir
-Write-RegContextMenu -Root $DirRoot -Name "OpenCodePWSH"   -Display "OpenCode PWSH"   -Icon $OpeIconDest -Command $OpeDir
+    $menuName = "$($t.Name)PWSH"
+    $iconPath = Join-Path $IconDir "$($t.Icon).ico"
 
-Write-Host "  ClaudeCode PWSH  (背景 / background + 文件夹 / folder)" -ForegroundColor Cyan
-Write-Host "  OpenCode PWSH    (背景 / background + 文件夹 / folder)" -ForegroundColor Cyan
+    $bgCmd  = "pwsh.exe -NoExit -NoProfile -Command `"cd \`"$BgPlaceholder\`"; & \`"$($t.Path)\`"`""
+    $dirCmd = "pwsh.exe -NoExit -NoProfile -Command `"cd \`"$DirPlaceholder\`"; & \`"$($t.Path)\`"`""
+
+    Write-RegContextMenu -Root $BgRoot -Name $menuName -Display "$($t.Name) PWSH" -Icon $iconPath -Command $bgCmd
+    Write-RegContextMenu -Root $DirRoot -Name $menuName -Display "$($t.Name) PWSH" -Icon $iconPath -Command $dirCmd
+
+    Write-Host "  $($t.Name) PWSH  (背景 / background + 文件夹 / folder)" -ForegroundColor Cyan
+}
 
 Write-Host ""
 Write-Host "安装完成 / Installation complete!" -ForegroundColor Green
