@@ -12,25 +12,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Get version
         id: version
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          if [ "$VERSION" = "$GITHUB_REF_NAME" ] || [ -z "$VERSION" ]; then
-            VERSION="0.1.0"
+          VERSION="$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')"
+          if [ -z "$VERSION" ]; then
+            VERSION="0.0.0"
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Using version: $VERSION"
 
       - name: Create ZIP
         run: |
-          zip -r "Coding-Launcher-${{ steps.version.outputs.version }}.win.zip" . -x ".git/*" ".github/*"
+          zip -r "Coding-Launcher-${{ steps.version.outputs.version }}.win.zip" \
+            --exclude=".git/*" --exclude=".github/*" \
+            README.md README_CN.md install.ps1 uninstall.ps1 \
+            claude.ico claude-color.ico \
+            codex.ico codex-color.ico \
+            copilot.ico copilot-color.ico \
+            gemini.ico gemini-color.ico \
+            opencode.ico
 
       - name: Create 7Z
         run: |
           sudo apt-get install -y p7zip-full > /dev/null
-          7z a "Coding-Launcher-${{ steps.version.outputs.version }}.win.7z" . -x".git/*" -x".github/*"
+          7z a "Coding-Launcher-${{ steps.version.outputs.version }}.win.7z" \
+            -xr!.git -xr!.github \
+            README.md README_CN.md install.ps1 uninstall.ps1 \
+            claude.ico claude-color.ico \
+            codex.ico codex-color.ico \
+            copilot.ico copilot-color.ico \
+            gemini.ico gemini-color.ico \
+            opencode.ico
 
       - name: Create or update release
         env:
