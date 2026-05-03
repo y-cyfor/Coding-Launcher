@@ -39,6 +39,8 @@ Instead, simply **right-click any folder (or inside it) → select the tool you 
    - `gemini.ico` / `gemini-color.ico`
    - `opencode.ico`
 
+   **Or download and extract the latest release archive: [Releases](https://github.com/y-cyfor/Coding-Launcher/releases)**
+
 2. Right-click `install.ps1` → **"Run with PowerShell"**
 
 3. When prompted, choose your preferred global icon style:

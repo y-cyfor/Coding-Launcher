@@ -39,6 +39,8 @@
    - `gemini.ico` / `gemini-color.ico`
    - `opencode.ico`
 
+   **或直接下载压缩包解压：[Releases](https://github.com/y-cyfor/Coding-Launcher/releases)**
+
 2. 右键点击 `install.ps1` → **"使用 PowerShell 运行"**
 
 3. 根据提示选择全局图标样式：
