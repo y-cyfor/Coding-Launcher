@@ -33,6 +33,7 @@ jobs:
             ico/claude.ico ico/claude-color.ico \
             ico/codex.ico ico/codex-color.ico \
             ico/copilot.ico ico/copilot-color.ico \
+            ico/coding.ico ico/coding-color.ico \
             ico/gemini.ico ico/gemini-color.ico \
             ico/opencode.ico
 
@@ -45,6 +46,7 @@ jobs:
             ico/claude.ico ico/claude-color.ico \
             ico/codex.ico ico/codex-color.ico \
             ico/copilot.ico ico/copilot-color.ico \
+            ico/coding.ico ico/coding-color.ico \
             ico/gemini.ico ico/gemini-color.ico \
             ico/opencode.ico
 
