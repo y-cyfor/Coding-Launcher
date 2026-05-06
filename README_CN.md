@@ -1,11 +1,9 @@
-# Coding Launcher —— AI 编程 CLI 工具右键菜单启动器
+# <p align="center"> Coding Launcher —— AI 编程 CLI 工具右键菜单启动器 </p>
 
-<center>
-
-[🇨🇳 简体中文](README_CN.md) | [🇬🇧 English](README.md)
-
-</center>
-
+<p align="center">
+  <a href="README.md">English</a> |
+  <a href="README_CN.md">简体中文</a> |
+</p>
 
 在 Windows 右键菜单中添加 "ClaudeCode PWSH"、"CodexCli PWSH"、"CopilotCli PWSH"、"GeminiCli PWSH" 和 "OpenCode PWSH" 选项，从任意文件夹直接启动工具——无需打开终端、无需 `cd`、无需手动输入命令。
 
@@ -59,13 +57,13 @@
    - `[1]` 黑白（默认）
    - `[2]` 彩色
 
-4. 脚本会扫描本地已安装的工具（Windows + WSL），并显示检测结果：
+4. 脚本会扫描本地已安装的工具（Windows + WSL），并显示检测结果和版本号：
    ```
-   Windows 已安装: ClaudeCode、OpenCode
+   Windows 已安装: ClaudeCode (v1.2.3)、OpenCode (v0.5.1)
    Windows 未安装: CodexCli、CopilotCli、GeminiCli
 
    检测到 WSL 发行版: Ubuntu
-     Ubuntu 已安装: ClaudeCode、CodexCli
+     Ubuntu 已安装: ClaudeCode (v1.2.0)、CodexCli (v0.3.0)
      Ubuntu 未安装: CopilotCli、GeminiCli、OpenCode
    ```
 
@@ -74,10 +72,10 @@
    ══════════════════════════════════════════════════════
      可用菜单项 / Available menu items:
    ══════════════════════════════════════════════════════
-     [1] ClaudeCode        (Windows)
-     [2] OpenCode          (Windows)
-     [3] ClaudeCode WSL    (Ubuntu)
-     [4] CodexCli WSL      (Ubuntu)
+     [1] ClaudeCode v1.2.3        (Windows)
+     [2] OpenCode v0.5.1          (Windows)
+     [3] ClaudeCode v1.2.0 WSL    (Ubuntu)
+     [4] CodexCli v0.3.0 WSL      (Ubuntu)
    ══════════════════════════════════════════════════════
    ```
 
@@ -102,6 +100,7 @@ WSL 菜单项会通过 `wslpath` 自动将 Windows 路径转换为 WSL 路径。
 
 - 如果菜单项没有立即出现，请重启资源管理器或注销后重新登录。
 - 随时可以重新运行 `install.ps1` 切换黑白/彩色图标，或为后续新安装的工具注册菜单。
+- 子菜单模式下，父级菜单使用专属的 Coding Launcher 图标，跟随全局黑白/彩色选择。
 - 安装期间 `ico/` 文件夹必须与脚本放在同一目录。安装完成后，原始图标文件夹可以安全删除（图标已复制到持久化位置）。
 
 ## 工具
@@ -109,3 +108,6 @@ WSL 菜单项会通过 `wslpath` 自动将 Windows 路径转换为 WSL 路径。
 **ClaudeCode**
 
 **小米 MiMo-V2.5-Pro**
+
+## ICON
+by Ecommerce Website Design on <a href="https://icon-icons.com/zh/authors/364-ecommerce-website-design">Icon-Icons.com</a>

@@ -1,10 +1,9 @@
-# Coding Launcher —— Context Menu Launcher for AI Coding CLI Tools
+# <p align="center"> Coding Launcher —— Context Menu Launcher for AI Coding CLI Tools </p>
 
-<center>
-
-[🇨🇳 简体中文](README_CN.md) | [🇬🇧 English](README.md)
-
-</center>
+<p align="center">
+  <a href="README.md">English</a> |
+  <a href="README_CN.md">简体中文</a> |
+</p>
 
 Add "ClaudeCode PWSH", "CodexCli PWSH", "CopilotCli PWSH", "GeminiCli PWSH" and "OpenCode PWSH" entries to your Windows right-click context menu. Open any tool directly from any folder — no terminal, no `cd`, no manual commands.
 
@@ -58,13 +57,13 @@ All tools support both **Windows** and **WSL** environments.
    - `[1]` Monochrome (default)
    - `[2]` Color
 
-4. The script will scan your system for installed tools (Windows + WSL). A summary will be displayed:
+4. The script will scan your system for installed tools (Windows + WSL) and display versions:
    ```
-   Windows 已安装: ClaudeCode、OpenCode
+   Windows 已安装: ClaudeCode (v1.2.3)、OpenCode (v0.5.1)
    Windows 未安装: CodexCli、CopilotCli、GeminiCli
 
    检测到 WSL 发行版: Ubuntu
-     Ubuntu 已安装: ClaudeCode、CodexCli
+     Ubuntu 已安装: ClaudeCode (v1.2.0)、CodexCli (v0.3.0)
      Ubuntu 未安装: CopilotCli、GeminiCli、OpenCode
    ```
 
@@ -73,10 +72,10 @@ All tools support both **Windows** and **WSL** environments.
    ══════════════════════════════════════════════════════
      可用菜单项 / Available menu items:
    ══════════════════════════════════════════════════════
-     [1] ClaudeCode        (Windows)
-     [2] OpenCode          (Windows)
-     [3] ClaudeCode WSL    (Ubuntu)
-     [4] CodexCli WSL      (Ubuntu)
+     [1] ClaudeCode v1.2.3        (Windows)
+     [2] OpenCode v0.5.1          (Windows)
+     [3] ClaudeCode v1.2.0 WSL    (Ubuntu)
+     [4] CodexCli v0.3.0 WSL      (Ubuntu)
    ══════════════════════════════════════════════════════
    ```
 
@@ -101,6 +100,7 @@ Right-click `uninstall.ps1` → **"Run with PowerShell"** → confirm UAC prompt
 
 - If menu items don't appear immediately, restart Windows Explorer or log out and back in.
 - You can re-run `install.ps1` anytime to switch between monochrome and color icons, or to register newly installed tools.
+- In submenu mode, the parent menu uses a dedicated "Coding Launcher" icon that follows the global monochrome/color choice.
 - The `ico/` folder must remain in the same directory as the scripts during installation. After installation, it can be safely deleted (icons are copied to a persistent location).
 
 ## Tools
@@ -108,3 +108,6 @@ Right-click `uninstall.ps1` → **"Run with PowerShell"** → confirm UAC prompt
 **ClaudeCode**
 
 **XiaoMi MiMo-V2.5-Pro**
+
+## ICON
+by Ecommerce Website Design on <a href="https://icon-icons.com/zh/authors/364-ecommerce-website-design">Icon-Icons.com</a>
